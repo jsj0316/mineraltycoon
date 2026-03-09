@@ -6,10 +6,8 @@
   <title>광물 판매 타이쿤</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
-  
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
@@ -18,35 +16,38 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
 
-    // 교과서 핵심 광물 데이터베이스 (총 9종)
+    // 1. 교과서 핵심 광물 데이터베이스 (총 6종으로 통합)
     const MINERALS = [
-      { id: '석영', name: '석영', color: '🌟 밝은색(무색/흰색)입니다! (힌트: "석·장"이는 밝다!)', streak: '흰색 가루가 나옵니다. (특별한 특징 없음)', hardness: '⚔️ 매우 단단합니다! 방해석을 긁어버립니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
-      { id: '장석', name: '장석', color: '🌟 밝은색(흰색/분홍색)입니다! (힌트: "석·장"이는 밝다!)', streak: '흰색 가루가 나옵니다.', hardness: '단단한 편이지만 석영보다는 약간 무릅니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '석영', name: '석영', color: '🌟 밝은색(무색/흰색)입니다!', streak: '흰색 가루가 나옵니다. (특징 없음)', hardness: '⚔️ 매우 단단합니다! 방해석을 긁어버립니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '장석', name: '장석', color: '🌟 밝은색(흰색/분홍색)입니다!', streak: '흰색 가루가 나옵니다.', hardness: '단단한 편이지만 석영보다는 약간 무릅니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
       { id: '방해석', name: '방해석', color: '🌟 밝은색(무색/흰색)입니다!', streak: '흰색 가루가 나옵니다.', hardness: '⚔️ 무른 편입니다. 석영과 긁으면 방해석이 긁힙니다.', hcl: '🫧 거품이 보글보글 발생합니다! (염산 반응 O)', magnetism: '반응이 없습니다.' },
-      { id: '흑운모', name: '흑운모', color: '🌑 어두운색(검은색)입니다! (힌트: 흑·각·휘·감!)', streak: '😲 흰색 가루가 나옵니다! (겉은 어두운데 가루는 하얗다?!)', hardness: '얇게 잘 벗겨지는 성질이 있습니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
-      { id: '각섬석', name: '각섬석', color: '🌑 어두운색(녹갈색/검은색)입니다!', streak: '옅은 녹색 또는 흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
-      { id: '휘석', name: '휘석', color: '🌑 어두운색(녹갈색/검은색)입니다!', streak: '옅은 녹색 또는 흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
-      { id: '감람석', name: '감람석', color: '🌑 어두운색(황록색)입니다!', streak: '흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
-      { id: '자철석', name: '자철석', color: '🌑 어두운색(검은색)입니다! (시커먼 덩어리)', streak: '🖤 검은색 가루가 나옵니다!', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '🧲 클립 같은 쇠붙이를 끌어당깁니다! (자성 O)' },
-      { id: '적철석', name: '적철석', color: '🌑 어두운색(검은색/적갈색)입니다!', streak: '🧱 적갈색 가루가 나옵니다! (붉을 적!)', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' }
+      { id: '흑운모류', name: '흑운모(각·휘·감)', color: '🌑 어두운색입니다! (흑·각·휘·감 4총사)', streak: '😲 흰색(또는 옅은 녹색) 가루가 나옵니다!', hardness: '흑운모는 얇게 벗겨지고, 나머지는 단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '자철석', name: '자철석', color: '🌑 어두운색(검은색)입니다!', streak: '🖤 검은색 가루가 나옵니다!', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '🧲 쇠붙이를 강하게 끌어당깁니다! (자성 O)' },
+      { id: '적철석', name: '적철석', color: '🌑 어두운색(검은색/적갈색)입니다!', streak: '🧱 적갈색(갈색) 가루가 나옵니다!', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' }
     ];
 
     const ALL_MINERAL_NAMES = MINERALS.map(m => m.name);
 
-    // 12가지 고정 퀘스트
+    // 2. 퀘스트 (총 11개)
     const QUESTS = [
       { id: 'q_jangseok', type: 'single', target: ['장석'], dialogue: '광물학자: "석영과 장석은 밝은색을 띠는 조암광물이지. 분홍색이나 흰색을 띠는 이 광물은 무엇일까?"', mineralId: '장석' },
       { id: 'q_banghae', type: 'single', target: ['방해석'], dialogue: '과학 선생님: "이 흰색 광물에 묽은 염산을 떨어뜨리면 거품이 보글보글 발생한단다. 이런 염산 반응을 하는 광물이 뭐였지?"', mineralId: '방해석' },
-      { id: 'q_heugun', type: 'single', target: ['흑운모'], dialogue: '수집가: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠지. 그중 조흔색이 흰색이면서 얇게 쪼개지는 이 광물은 뭐지?"', mineralId: '흑운모' },
-      { id: 'q_gakseom', type: 'single', target: ['각섬석'], dialogue: '학생: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠는 조암광물이에요. 단단하고 옅은 녹색 조흔색을 띠는 이 광물은?"', mineralId: '각섬석' },
-      { id: 'q_hwiseok', type: 'single', target: ['휘석'], dialogue: '수집가: "어두운색을 띠는 조암광물 중 하나야. 각섬석과 비슷하게 생겼지!"', mineralId: '휘석' },
-      { id: 'q_gamram', type: 'single', target: ['감람석'], dialogue: '보석 세공사: "어두운색 조암광물 중 하나지만 예쁜 황록색 빛이 감돌아요. 조흔색은 흰색인 이 광물은 무엇일까요?"', mineralId: '감람석' },
-      { id: 'q_jacheol', type: 'single', target: ['자철석'], dialogue: '대장장이: "이 돌에 클립 같은 쇠붙이를 가져갔더니 자석처럼 찰싹 끌어당기더군! 자성이 있는 이 광물의 이름은 뭔가?"', mineralId: '자철석' },
-      { id: 'q_jeokcheol', type: 'single', target: ['적철석'], dialogue: '과학 선생님: "자철석, 적철석, 흑운모는 겉보기 색이 헷갈려. 하지만 조흔판에 긁었을 때 이 광물은 붉은색(적갈색) 가루가 나온단다!"', mineralId: '적철석' },
-      { id: 'q_seogyeong_hard', type: 'single', target: ['석영'], dialogue: '연구원: "이 밝은색 광물이 석영인지 방해석인지 겉모습만으로는 헷갈리네... 어떻게 구분하면 좋을까? 긁어서 단단한 정도를 비교해보자! 먼저 도구를 클릭해서 확인해줘!"', mineralId: '석영', requiredTool: 'hardness' },
-      { id: 'q_all_rock', type: 'multi', target: ['석영', '장석', '흑운모', '각섬석', '휘석', '감람석'], dialogue: '선생님: "[이론 평가] 암석을 이루는 주된 광물인 \'조암광물\'을 도감에서 모두 골라 제출해보렴!"' },
+      { id: 'q_seogyeong_hard', type: 'single', target: ['석영'], dialogue: '연구원: "이 밝은색 광물이 석영인지 방해석인지 헷갈리네... 긁어서 단단한 정도를 비교해보자! 먼저 [🔨 굳기] 도구를 클릭해서 확인해줘!"', mineralId: '석영', requiredTool: 'hardness' },
+      
+      // 어두운 조암광물 통합
+      { id: 'q_dark_any', type: 'single', target: ['흑운모(각·휘·감)'], dialogue: '수집가: "어두운색을 띠는 조암광물 4총사(흑운모, 각섬석, 휘석, 감람석) 중 아무거나 하나 찾아주게! 굳이 서로 구분할 필요는 없다네!"', mineralId: '흑운모류' },
+      
+      // 조흔색 3종 비교
+      { id: 'q_streak_black', type: 'single', target: ['자철석'], dialogue: '광부: "자철석, 흑운모, 적철석 3가지를 비교하고 있어! 그중에서 조흔판에 긁었을 때 **검은색** 가루가 나오는 광물을 골라줘!"', mineralId: '자철석' },
+      { id: 'q_streak_brown', type: 'single', target: ['적철석'], dialogue: '과학 선생님: "자철석, 흑운모, 적철석의 조흔색 비교 문제란다! 조흔판에 긁었을 때 **갈색(적갈색)** 가루가 나오는 광물은 무엇일까?"', mineralId: '적철석' },
+      { id: 'q_streak_white', type: 'single', target: ['흑운모(각·휘·감)'], dialogue: '대장장이: "자철석, 적철석, 흑운모 중 겉보기엔 어두운데 조흔판에 긁었더니 반전으로 **흰색** 가루가 나오는 녀석이 있더군! 그게 뭔가?"', mineralId: '흑운모류' },
+      
+      { id: 'q_magnetism', type: 'single', target: ['자철석'], dialogue: '대장장이: "이 돌에 클립 같은 쇠붙이를 가져갔더니 자석처럼 찰싹 끌어당기더군! 자성이 있는 이 광물의 이름은 뭔가?"', mineralId: '자철석' },
+      
+      // 이론 문제
+      { id: 'q_all_rock', type: 'multi', target: ['석영', '장석', '흑운모(각·휘·감)'], dialogue: '선생님: "[이론 평가] 암석을 이루는 주된 광물인 \'조암광물\'을 모두 골라 제출해보렴!"' },
       { id: 'q_bright_rock', type: 'multi', target: ['석영', '장석'], dialogue: '선생님: "[이론 평가] 조암광물 중에서 밝은색을 띠는 광물을 모두 골라 제출해보렴!"' },
-      { id: 'q_dark_rock', type: 'multi', target: ['흑운모', '각섬석', '휘석', '감람석'], dialogue: '선생님: "[이론 평가] 조암광물 중에서 어두운색을 띠는 광물을 모두 골라 제출해보렴!"' }
+      { id: 'q_dark_rock', type: 'multi', target: ['흑운모(각·휘·감)'], dialogue: '선생님: "[이론 평가] 조암광물 중에서 어두운색을 띠는 광물을 모두 골라 제출해보렴!"' }
     ];
 
     const TOOLS = [
@@ -93,7 +94,6 @@
       
       const [currentQuest, setCurrentQuest] = useState(null);
       const [completedQuests, setCompletedQuests] = useState([]);
-      const [completedSingleMinerals, setCompletedSingleMinerals] = useState([]);
       const [multiSelection, setMultiSelection] = useState([]);
       
       const [logs, setLogs] = useState([]);
@@ -104,11 +104,12 @@
       
       useEffect(() => {
         let timer;
-        if (isPlaying && !modal) {
+        // 상점이 열려있지 않을 때만 타이머 작동
+        if (isPlaying && !modal && !isShopOpen) {
           timer = setInterval(() => setTimeElapsed(prev => prev + 1), 1000);
         }
         return () => clearInterval(timer);
-      }, [isPlaying, modal]);
+      }, [isPlaying, modal, isShopOpen]);
 
       const generateNextQuest = useCallback((currentCompleted = completedQuests) => {
         const remainingQuests = QUESTS.filter(q => !currentCompleted.includes(q.id));
@@ -123,10 +124,10 @@
       }, [completedQuests]);
 
       useEffect(() => {
-        if (isPlaying && currentQuest === null && completedQuests.length === 0) {
+        if (isPlaying && currentQuest === null && completedQuests.length === 0 && !isShopOpen) {
           generateNextQuest([]);
         }
-      }, [isPlaying, currentQuest, completedQuests, generateNextQuest]);
+      }, [isPlaying, currentQuest, completedQuests, isShopOpen, generateNextQuest]);
 
       const handleToolClick = (toolId) => {
         if (usedTools.includes(toolId)) return;
@@ -168,7 +169,7 @@
         }
 
         if (mineralName === currentQuest.target[0]) {
-          handleSuccess(`[${mineralName}] 이(가) 맞습니다!`, [mineralName]);
+          handleSuccess(`[${mineralName}] 이(가) 맞습니다!`);
         } else {
           handleFail();
         }
@@ -184,13 +185,13 @@
         const isAllCorrect = multiSelection.every(m => currentQuest.target.includes(m));
 
         if (isCorrectLength && isAllCorrect) {
-          handleSuccess(`모두 정확하게 골라냈습니다! 완벽해요!`, []);
+          handleSuccess(`모두 정확하게 골라냈습니다! 완벽해요!`);
         } else {
           handleFail(true);
         }
       };
 
-      const handleSuccess = (msg, newSingleMinerals) => {
+      const handleSuccess = (msg) => {
         playSound('success');
         let speedBonus = 0;
         let timeMsg = `소요 시간: ${timeElapsed}초\n`;
@@ -204,16 +205,12 @@
         const newCompletedQuests = [...completedQuests, currentQuest.id];
         setCompletedQuests(newCompletedQuests);
 
-        if (newSingleMinerals.length > 0) {
-          setCompletedSingleMinerals(prev => [...prev, ...newSingleMinerals]);
-        }
-
         if (newCompletedQuests.length >= QUESTS.length) {
           playSound('clear');
           setModal({
             type: 'clear',
-            title: '🎓 마스터 감정사 등극! (엔딩)',
-            msg: `축하합니다! 도감에 있는 모든 실전 및 이론 평가를 완벽하게 감정했습니다.\n당신은 진정한 광물학자입니다!\n\n최종 달성 소지금: ${money + 1000 + speedBonus} G`,
+            title: '🎓 마스터 감정사 등극!',
+            msg: `축하합니다! 도감에 있는 모든 퀘스트를 완벽하게 감정했습니다.\n\n최종 달성 소지금: ${money + 1000 + speedBonus} G\n이제 상점에서 획득한 돈을 써보세요!`,
           });
         } else {
           setModal({
@@ -232,18 +229,17 @@
           type: 'error',
           title: '💥 오답입니다!',
           msg: isMulti 
-            ? `선택한 광물 중 틀린 것이 있거나 빼먹은 것이 있습니다!\n위약금 500G를 차감합니다. 교과서를 다시 떠올려보세요!`
-            : `의뢰인이 화를 내며 위약금 500G를 떼어갔습니다...\n교과서를 떠올리며 일지를 다시 확인해보세요!`,
+            ? `선택한 광물 중 틀린 것이 있거나 빼먹은 것이 있습니다!\n위약금 500G를 차감합니다.`
+            : `의뢰인이 화를 내며 위약금 500G를 떼어갔습니다...\n일지를 다시 확인해보세요!`,
         });
       };
 
       const closeModal = () => {
         playSound('click');
         if (modal?.type === 'clear') {
-          setIsPlaying(false);
-          setShowStory(true);
+          // 게임을 끝내지 않고 바로 상점을 띄움 (2회차 준비)
+          setIsShopOpen(true);
           setCompletedQuests([]);
-          setCompletedSingleMinerals([]);
           setCurrentQuest(null);
         } else if (modal?.type === 'success') {
           generateNextQuest(modal.newCompletedQuests);
@@ -271,7 +267,7 @@
                 <h1 className="text-3xl text-yellow-500 mb-6 drop-shadow-sm">할아버지의 낡은 감정소</h1>
                 <p className="text-gray-300 mb-8 text-lg leading-relaxed">
                   "쿨럭... 내 손주야...<br/>이 낡은 광물 감정소를 네게 맡기마.<br/>교과서에서 배운 지식으로 광물을 감정하고<br/>
-                  <span className="text-yellow-400 font-bold">12개의 퀘스트를 모두 완수해다오...</span>"
+                  <span className="text-yellow-400 font-bold">{QUESTS.length}개의 퀘스트를 모두 완수해다오...</span>"
                 </p>
                 <button onClick={() => { playSound('click'); setShowStory(false); }} className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl py-3 px-8 rounded-xl shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-yellow-700">
                   상점 물려받기 🔨
@@ -287,7 +283,7 @@
               <div className="text-8xl mb-6 animate-float drop-shadow-xl text-gray-300">❓</div>
               <h1 className="text-4xl text-pink-600 mb-4 drop-shadow-sm">💎 광물 판매 타이쿤</h1>
               <p className="text-gray-600 mb-8 text-lg bg-pink-50 p-4 rounded-xl">
-                총 <span className="text-pink-500 font-bold">12가지</span>의 퀘스트가 기다립니다.<br/>어떤 광물을 여러 개 선택해야 하는<br/>
+                총 <span className="text-pink-500 font-bold">{QUESTS.length}가지</span>의 퀘스트가 기다립니다.<br/>어떤 광물을 여러 개 선택해야 하는<br/>
                 <strong className="text-indigo-500">이론 문제</strong>도 섞여 있으니 주의하세요!
               </p>
               <button onClick={() => { playSound('start'); setIsPlaying(true); setMoney(0); setCompletedQuests([]); setPurchasedItems([]); }} className="bg-pink-400 hover:bg-pink-500 text-white text-2xl py-4 px-10 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-pink-600">
@@ -307,7 +303,7 @@
             <div className="flex gap-2 md:gap-4 text-sm md:text-lg text-gray-700 flex-wrap items-center">
               <button onClick={() => { playSound('click'); setIsShopOpen(true); }} className="bg-purple-100 px-3 py-1 rounded-full border border-purple-300 text-purple-700 font-bold hover:bg-purple-200 active:scale-95 transition-transform shadow-sm">🛒 상점</button>
               <div className="bg-blue-100 px-3 py-1 rounded-full border border-blue-300 text-blue-700 flex items-center font-bold">⏱️ {timeElapsed}초</div>
-              <div className="bg-yellow-100 px-3 py-1 rounded-full border border-yellow-300 font-bold">의뢰: {completedQuests.length + 1} / 12</div>
+              <div className="bg-yellow-100 px-3 py-1 rounded-full border border-yellow-300 font-bold">의뢰: {completedQuests.length + 1} / {QUESTS.length}</div>
               <div className="bg-green-100 px-3 py-1 rounded-full border border-green-300">소지금: <span className="text-green-600 font-bold">{money.toLocaleString()} G</span></div>
             </div>
           </header>
@@ -349,17 +345,19 @@
             <h2 className={`text-xl mb-4 px-4 py-1 rounded-full text-center font-bold ${currentQuest?.type === 'multi' ? 'bg-blue-100 text-blue-700' : 'bg-green-50 text-green-600'}`}>
               {currentQuest?.type === 'multi' ? '✅ 해당하는 광물을 모두 선택하세요' : '🚚 납품할 광물 하나를 선택하세요'}
             </h2>
+            
+            {/* 6개 버튼으로 깔끔하게 배치 */}
             <div className="grid grid-cols-3 gap-3 mb-4">
               {ALL_MINERAL_NAMES.map((name) => {
                 const isMultiSelected = currentQuest?.type === 'multi' && multiSelection.includes(name);
-                const isSolvedSingle = currentQuest?.type === 'single' && completedSingleMinerals.includes(name);
                 return (
-                  <button key={name} onClick={() => handleGuess(name)} disabled={isSolvedSingle} className={`p-3 rounded-2xl border-b-4 transition-all text-base md:text-lg font-bold ${isSolvedSingle ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed transform translate-y-1 border-b-0' : isMultiSelected ? 'bg-blue-500 text-white border-blue-700 transform translate-y-1 border-b-0 ring-4 ring-blue-200' : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}>
+                  <button key={name} onClick={() => handleGuess(name)} className={`p-3 rounded-2xl border-b-4 transition-all text-base md:text-lg font-bold ${isMultiSelected ? 'bg-blue-500 text-white border-blue-700 transform translate-y-1 border-b-0 ring-4 ring-blue-200' : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}>
                     {name}
                   </button>
                 );
               })}
             </div>
+
             {currentQuest?.type === 'multi' && (
               <button onClick={handleMultiSubmit} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold rounded-2xl shadow-md border-b-4 border-blue-800 active:translate-y-1 active:border-b-0 transition-all animate-pulse">
                 정답 제출하기 ({multiSelection.length}개 선택됨)
@@ -374,7 +372,7 @@
                 <h2 className={`text-2xl mb-4 font-bold ${modal.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>{modal.title}</h2>
                 <p className="text-gray-600 mb-6 whitespace-pre-wrap leading-relaxed font-medium">{modal.msg}</p>
                 <button onClick={closeModal} className={`w-full py-3 rounded-2xl text-xl text-white font-bold transition-all hover:scale-105 active:scale-95 shadow-md ${modal.type === 'error' ? 'bg-red-400 hover:bg-red-500' : 'bg-green-400 hover:bg-green-500'}`}>
-                  {modal.type === 'success' ? '다음 의뢰 받기 ➡️' : modal.type === 'clear' ? '처음 화면으로 🏠' : '다시 확인해보기 🔄'}
+                  {modal.type === 'success' ? '다음 의뢰 받기 ➡️' : modal.type === 'clear' ? '상점 둘러보기 🛒' : '다시 확인해보기 🔄'}
                 </button>
               </div>
             </div>

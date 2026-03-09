@@ -1,553 +1,434 @@
-import React, { useState, useEffect, useCallback } from 'react';
-
-// 광물 데이터베이스 (교과서 암기 포인트 완벽 반영)
-const MINERALS = [
-  {
-    id: '석영', name: '석영',
-    color: '🌟 밝은색(무색/흰색)입니다! (힌트: "석·장"이는 밝다!)',
-    streak: '흰색 가루가 나옵니다. (특별한 특징 없음)',
-    hardness: '⚔️ 매우 단단합니다! 방해석을 긁어버립니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '장석', name: '장석',
-    color: '🌟 밝은색(흰색/분홍색)입니다! (힌트: "석·장"이는 밝다!)',
-    streak: '흰색 가루가 나옵니다.',
-    hardness: '단단한 편이지만 석영보다는 약간 무릅니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '방해석', name: '방해석',
-    color: '🌟 밝은색(무색/흰색)입니다!',
-    streak: '흰색 가루가 나옵니다.',
-    hardness: '⚔️ 무른 편입니다. 석영과 긁으면 방해석이 긁힙니다.',
-    hcl: '🫧 거품이 보글보글 발생합니다! (염산 반응 O)',
-    magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '흑운모', name: '흑운모',
-    color: '🌑 어두운색(검은색)입니다! (힌트: 흑·각·휘·감!)',
-    streak: '😲 흰색 가루가 나옵니다! (겉은 어두운데 가루는 하얗다?!)',
-    hardness: '얇게 잘 벗겨지는 성질이 있습니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '각섬석', name: '각섬석',
-    color: '🌑 어두운색(녹갈색/검은색)입니다!',
-    streak: '옅은 녹색 또는 흰색 가루가 나옵니다.',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '휘석', name: '휘석',
-    color: '🌑 어두운색(녹갈색/검은색)입니다!',
-    streak: '옅은 녹색 또는 흰색 가루가 나옵니다.',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '감람석', name: '감람석',
-    color: '🌑 어두운색(황록색)입니다!',
-    streak: '흰색 가루가 나옵니다.',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '자철석', name: '자철석',
-    color: '🌑 어두운색(검은색)입니다! (시커먼 덩어리)',
-    streak: '🖤 검은색 가루가 나옵니다!',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '🧲 클립 같은 쇠붙이를 끌어당깁니다! (자성 O)',
-  },
-  {
-    id: '적철석', name: '적철석',
-    color: '🌑 어두운색(검은색/적갈색)입니다!',
-    streak: '🧱 적갈색 가루가 나옵니다! (붉을 적!)',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '금', name: '금',
-    color: '✨ 반짝이는 노란색입니다!',
-    streak: '💛 노란색 가루가 나옵니다! (진짜 금!)',
-    hardness: '무른 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '황철석', name: '황철석',
-    color: '✨ 반짝이는 노란색입니다!',
-    streak: '🖤 검은색 가루가 나옵니다! (가짜 금)',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  },
-  {
-    id: '황동석', name: '황동석',
-    color: '✨ 반짝이는 노란색입니다!',
-    streak: '🤢 녹흑색 가루가 나옵니다! (가짜 금)',
-    hardness: '단단한 편입니다.',
-    hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.',
-  }
-];
-
-// 교과서 본문을 바탕으로 한 특정 광물별 퀘스트 대사집
-const MINERAL_QUESTS = {
-  '석영': [
-    '연구원: "교과서에 보면 석영과 방해석을 서로 긁어볼 때 방해석이 긁힌다고 하더군. 즉, 방해석보다 더 단단하고 밝은색인 이 광물은 뭘까?"',
-    '학생: "석영과 장석처럼 밝은색을 띠는 광물 중 하나예요! 단단한 모래 성분인 이것의 이름은 뭔가요?"'
-  ],
-  '장석': [
-    '광물학자: "석영과 장석은 밝은색을 띠는 조암광물이지. 분홍색이나 흰색을 띠는 이 광물은 무엇일까?"'
-  ],
-  '방해석': [
-    '과학 선생님: "이 흰색 광물에 묽은 염산을 떨어뜨리면 거품이 보글보글 발생한단다. 이런 염산 반응을 하는 광물이 뭐였지?"',
-    '연구원: "굳기를 알아보기 위해 석영이랑 서로 긁어봤는데 흠집이 나버렸어. 석영보다 무른 이 광물을 구별해줄래?"'
-  ],
-  '흑운모': [
-    '학생: "자철석, 적철석, 흑운모는 겉보기엔 다 어두운색으로 비슷해요! 하지만 이 광물은 조흔판에 긁으면 하얀색 가루가 나오죠. 얇게 쪼개지는 이것은?"',
-    '수집가: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠지. 그중 조흔색이 흰색이면서 얇게 벗겨지는 이 광물은 뭐지?"'
-  ],
-  '자철석': [
-    '대장장이: "이 돌에 클립 같은 쇠붙이를 가져갔더니 자석처럼 찰싹 끌어당기더군! 자성이 있는 이 광물의 이름은 뭔가?"',
-    '상인: "겉으로 보기에 어두운색이고, 조흔색도 까만 가루가 나오는구만. 쇠붙이까지 끌어당기는데 이게 뭐요?"'
-  ],
-  '적철석': [
-    '과학 선생님: "자철석, 적철석, 흑운모는 겉보기 색이 헷갈려. 하지만 조흔판에 긁었을 때 이 광물은 붉은색(적갈색) 가루가 나온단다!"',
-    '광부: "겉모습은 자철석이랑 비슷헌디 자석엔 안 붙어. 긁어보니 붉그스름한 가루가 나오는구만!"'
-  ],
-  '각섬석': [
-    '학생: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠는 조암광물이에요. 단단하고 옅은 녹색 조흔색을 띠는 이 광물은?"'
-  ],
-  '휘석': [
-    '수집가: "어두운색을 띠는 조암광물 중 하나야. 각섬석과 비슷하게 생겼지!"'
-  ],
-  '감람석': [
-    '보석 세공사: "어두운색 조암광물 중 하나지만 예쁜 황록색 빛이 감돌아요. 조흔색은 흰색인 이 광물은 무엇일까요?"'
-  ],
-  '금': [
-    '욕심쟁이: "크하하! 겉으로 보기에 반짝이는 노란색 광물을 찾았다!! 조흔판에 긁어도 노란색인 걸 보니 진짜지?!"'
-  ],
-  '황철석': [
-    '광부: "반짝여서 진짜 금인 줄 알았는디... 조흔판에 긁응께 까만 가루가 나오는 가짜 금이여! 이 광물은 이름이 뭐여?"'
-  ],
-  '황동석': [
-    '연구원: "노란색이라 헷갈리지만 조흔색으로 구별할 수 있지. 긁었을 때 녹흑색(녹색 띤 검정) 가루가 나오는 광물이야."'
-  ]
-};
-
-const ALL_MINERAL_NAMES = MINERALS.map(m => m.name);
-
-const TOOLS = [
-  { id: 'color', name: '🎨 겉보기 색', desc: '밝기/색상 확인' },
-  { id: 'streak', name: '🖍️ 조흔색', desc: '조흔판에 긁기' },
-  { id: 'hardness', name: '🔨 굳기', desc: '석영/방해석과 긁기' },
-  { id: 'hcl', name: '🧪 염산 반응', desc: '묽은 염산 떨어뜨리기' },
-  { id: 'magnetism', name: '🧲 자성', desc: '쇠붙이(클립) 대보기' },
-];
-
-const SHOP_ITEMS = [
-  { id: 'plant', name: '🪴 힐링 화분', price: 2000, desc: '연구실에 생기를 불어넣습니다.' },
-  { id: 'desk', name: '🪑 마호가니 책상', price: 5000, desc: '연구실 배경이 고급스러워집니다.' },
-  { id: 'license', name: '📜 마스터 감정사 자격증', price: 10000, desc: '전문가의 증표! 황금 뱃지 추가.' },
-  { id: 'yacht', name: '🛥️ 럭셔리 요트', price: 50000, desc: '엄청난 부의 상징.' }
-];
-
-const playSound = (type) => {
-  const AudioContext = window.AudioContext || window.webkitAudioContext;
-  if (!AudioContext) return;
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-
-    if (type === 'click') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(600, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
-    } else if (type === 'success') {
-      osc.type = 'triangle'; osc.frequency.setValueAtTime(400, ctx.currentTime); osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-    } else if (type === 'error') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, ctx.currentTime); osc.frequency.setValueAtTime(250, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
-    } else if (type === 'start' || type === 'clear') {
-      osc.type = 'square'; osc.frequency.setValueAtTime(440, ctx.currentTime); osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.2, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.8);
-    }
-  } catch (e) { console.log(e); }
-};
-
-export default function App() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showStory, setShowStory] = useState(true);
-  const [timeElapsed, setTimeElapsed] = useState(0);
-  const [money, setMoney] = useState(0);
-  const [targetMineral, setTargetMineral] = useState(null);
-  const [logs, setLogs] = useState([]);
-  const [usedTools, setUsedTools] = useState([]);
-  const [modal, setModal] = useState(null);
-  const [isShopOpen, setIsShopOpen] = useState(false);
-  const [purchasedItems, setPurchasedItems] = useState([]);
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>광물 판매 타이쿤</title>
   
-  // 한 번 출제된 광물 ID를 저장하는 배열
-  const [usedMinerals, setUsedMinerals] = useState([]);
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
 
-  useEffect(() => {
-    let timer;
-    if (isPlaying && !modal) {
-      timer = setInterval(() => setTimeElapsed(prev => prev + 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [isPlaying, modal]);
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
 
-  const generateNewMineral = useCallback((currentUsedList = usedMinerals) => {
-    const remainingMinerals = MINERALS.filter(m => !currentUsedList.includes(m.id));
-    
-    // 만약 남은 광물이 없다면 (안전장치, 실제로는 handleGuess에서 처리)
-    if (remainingMinerals.length === 0) return;
+    // 교과서 핵심 광물 데이터베이스 (총 9종)
+    const MINERALS = [
+      { id: '석영', name: '석영', color: '🌟 밝은색(무색/흰색)입니다! (힌트: "석·장"이는 밝다!)', streak: '흰색 가루가 나옵니다. (특별한 특징 없음)', hardness: '⚔️ 매우 단단합니다! 방해석을 긁어버립니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '장석', name: '장석', color: '🌟 밝은색(흰색/분홍색)입니다! (힌트: "석·장"이는 밝다!)', streak: '흰색 가루가 나옵니다.', hardness: '단단한 편이지만 석영보다는 약간 무릅니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '방해석', name: '방해석', color: '🌟 밝은색(무색/흰색)입니다!', streak: '흰색 가루가 나옵니다.', hardness: '⚔️ 무른 편입니다. 석영과 긁으면 방해석이 긁힙니다.', hcl: '🫧 거품이 보글보글 발생합니다! (염산 반응 O)', magnetism: '반응이 없습니다.' },
+      { id: '흑운모', name: '흑운모', color: '🌑 어두운색(검은색)입니다! (힌트: 흑·각·휘·감!)', streak: '😲 흰색 가루가 나옵니다! (겉은 어두운데 가루는 하얗다?!)', hardness: '얇게 잘 벗겨지는 성질이 있습니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '각섬석', name: '각섬석', color: '🌑 어두운색(녹갈색/검은색)입니다!', streak: '옅은 녹색 또는 흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '휘석', name: '휘석', color: '🌑 어두운색(녹갈색/검은색)입니다!', streak: '옅은 녹색 또는 흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '감람석', name: '감람석', color: '🌑 어두운색(황록색)입니다!', streak: '흰색 가루가 나옵니다.', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' },
+      { id: '자철석', name: '자철석', color: '🌑 어두운색(검은색)입니다! (시커먼 덩어리)', streak: '🖤 검은색 가루가 나옵니다!', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '🧲 클립 같은 쇠붙이를 끌어당깁니다! (자성 O)' },
+      { id: '적철석', name: '적철석', color: '🌑 어두운색(검은색/적갈색)입니다!', streak: '🧱 적갈색 가루가 나옵니다! (붉을 적!)', hardness: '단단한 편입니다.', hcl: '반응이 없습니다.', magnetism: '반응이 없습니다.' }
+    ];
 
-    // 남은 광물 중 하나를 랜덤으로 선택
-    const randomMineral = remainingMinerals[Math.floor(Math.random() * remainingMinerals.length)];
-    const dialogOptions = MINERAL_QUESTS[randomMineral.id];
-    const randomMsg = dialogOptions[Math.floor(Math.random() * dialogOptions.length)];
+    const ALL_MINERAL_NAMES = MINERALS.map(m => m.name);
 
-    setTargetMineral(randomMineral);
-    setLogs([
-      `📢 [새로운 의뢰인 도착!]`,
-      randomMsg
-    ]);
-    setUsedTools([]);
-    setTimeElapsed(0);
-  }, [usedMinerals]);
+    // 12가지 고정 퀘스트
+    const QUESTS = [
+      { id: 'q_jangseok', type: 'single', target: ['장석'], dialogue: '광물학자: "석영과 장석은 밝은색을 띠는 조암광물이지. 분홍색이나 흰색을 띠는 이 광물은 무엇일까?"', mineralId: '장석' },
+      { id: 'q_banghae', type: 'single', target: ['방해석'], dialogue: '과학 선생님: "이 흰색 광물에 묽은 염산을 떨어뜨리면 거품이 보글보글 발생한단다. 이런 염산 반응을 하는 광물이 뭐였지?"', mineralId: '방해석' },
+      { id: 'q_heugun', type: 'single', target: ['흑운모'], dialogue: '수집가: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠지. 그중 조흔색이 흰색이면서 얇게 쪼개지는 이 광물은 뭐지?"', mineralId: '흑운모' },
+      { id: 'q_gakseom', type: 'single', target: ['각섬석'], dialogue: '학생: "흑운모, 각섬석, 휘석, 감람석은 어두운색을 띠는 조암광물이에요. 단단하고 옅은 녹색 조흔색을 띠는 이 광물은?"', mineralId: '각섬석' },
+      { id: 'q_hwiseok', type: 'single', target: ['휘석'], dialogue: '수집가: "어두운색을 띠는 조암광물 중 하나야. 각섬석과 비슷하게 생겼지!"', mineralId: '휘석' },
+      { id: 'q_gamram', type: 'single', target: ['감람석'], dialogue: '보석 세공사: "어두운색 조암광물 중 하나지만 예쁜 황록색 빛이 감돌아요. 조흔색은 흰색인 이 광물은 무엇일까요?"', mineralId: '감람석' },
+      { id: 'q_jacheol', type: 'single', target: ['자철석'], dialogue: '대장장이: "이 돌에 클립 같은 쇠붙이를 가져갔더니 자석처럼 찰싹 끌어당기더군! 자성이 있는 이 광물의 이름은 뭔가?"', mineralId: '자철석' },
+      { id: 'q_jeokcheol', type: 'single', target: ['적철석'], dialogue: '과학 선생님: "자철석, 적철석, 흑운모는 겉보기 색이 헷갈려. 하지만 조흔판에 긁었을 때 이 광물은 붉은색(적갈색) 가루가 나온단다!"', mineralId: '적철석' },
+      { id: 'q_seogyeong_hard', type: 'single', target: ['석영'], dialogue: '연구원: "이 밝은색 광물이 석영인지 방해석인지 겉모습만으로는 헷갈리네... 어떻게 구분하면 좋을까? 긁어서 단단한 정도를 비교해보자! 먼저 도구를 클릭해서 확인해줘!"', mineralId: '석영', requiredTool: 'hardness' },
+      { id: 'q_all_rock', type: 'multi', target: ['석영', '장석', '흑운모', '각섬석', '휘석', '감람석'], dialogue: '선생님: "[이론 평가] 암석을 이루는 주된 광물인 \'조암광물\'을 도감에서 모두 골라 제출해보렴!"' },
+      { id: 'q_bright_rock', type: 'multi', target: ['석영', '장석'], dialogue: '선생님: "[이론 평가] 조암광물 중에서 밝은색을 띠는 광물을 모두 골라 제출해보렴!"' },
+      { id: 'q_dark_rock', type: 'multi', target: ['흑운모', '각섬석', '휘석', '감람석'], dialogue: '선생님: "[이론 평가] 조암광물 중에서 어두운색을 띠는 광물을 모두 골라 제출해보렴!"' }
+    ];
 
-  useEffect(() => {
-    if (isPlaying && targetMineral === null && usedMinerals.length === 0) {
-      generateNewMineral([]);
-    }
-  }, [isPlaying, targetMineral, usedMinerals, generateNewMineral]);
+    const TOOLS = [
+      { id: 'color', name: '🎨 겉보기 색', desc: '밝기/색상 확인' },
+      { id: 'streak', name: '🖍️ 조흔색', desc: '조흔판에 긁기' },
+      { id: 'hardness', name: '🔨 굳기', desc: '석영/방해석과 긁기' },
+      { id: 'hcl', name: '🧪 염산 반응', desc: '묽은 염산 떨어뜨리기' },
+      { id: 'magnetism', name: '🧲 자성', desc: '쇠붙이(클립) 대보기' },
+    ];
 
-  const handleToolClick = (toolId) => {
-    if (usedTools.includes(toolId)) return;
-    playSound('click');
+    const SHOP_ITEMS = [
+      { id: 'plant', name: '🪴 힐링 화분', price: 1000, desc: '연구실에 생기를 불어넣습니다.' },
+      { id: 'desk', name: '🪑 마호가니 책상', price: 3000, desc: '연구실 배경이 고급스러워집니다.' },
+      { id: 'license', name: '📜 마스터 감정사 자격증', price: 8000, desc: '전문가의 증표! 황금 뱃지 추가.' }
+    ];
 
-    let resultMsg = '';
-    switch (toolId) {
-      case 'color': resultMsg = targetMineral.color; break;
-      case 'streak': resultMsg = targetMineral.streak; break;
-      case 'hardness': resultMsg = targetMineral.hardness; break;
-      case 'hcl': resultMsg = targetMineral.hcl; break;
-      case 'magnetism': resultMsg = targetMineral.magnetism; break;
-      default: break;
-    }
+    const playSound = (type) => {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      try {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(ctx.destination);
 
-    setLogs(prev => [...prev, `[${TOOLS.find(t => t.id === toolId).name}] : ${resultMsg}`]);
-    setUsedTools(prev => [...prev, toolId]);
-  };
+        if (type === 'click') {
+          osc.type = 'sine'; osc.frequency.setValueAtTime(600, ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.1); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.1);
+        } else if (type === 'success') {
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(400, ctx.currentTime); osc.frequency.setValueAtTime(600, ctx.currentTime + 0.1); osc.frequency.setValueAtTime(800, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+        } else if (type === 'error') {
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, ctx.currentTime); osc.frequency.setValueAtTime(250, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.3, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.4);
+        } else if (type === 'start' || type === 'clear') {
+          osc.type = 'square'; osc.frequency.setValueAtTime(440, ctx.currentTime); osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2); gainNode.gain.setValueAtTime(0.2, ctx.currentTime); gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8); osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.8);
+        }
+      } catch (e) { console.log(e); }
+    };
 
-  const handleGuess = (guessName) => {
-    if (guessName === targetMineral.name) {
-      playSound('success');
-      let speedBonus = 0;
-      let timeMsg = `소요 시간: ${timeElapsed}초\n`;
-      if (timeElapsed <= 10) {
-        speedBonus = 500; timeMsg += `⚡ 스피드 보너스 500G!\n`;
-      } else if (timeElapsed <= 20) {
-        speedBonus = 200; timeMsg += `🏃 빠른 납품 보너스 200G!\n`;
-      }
-
-      setMoney(prev => prev + 1000 + speedBonus);
+    function App() {
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [showStory, setShowStory] = useState(true);
+      const [timeElapsed, setTimeElapsed] = useState(0);
+      const [money, setMoney] = useState(0);
       
-      const newUsedList = [...usedMinerals, targetMineral.id];
-      setUsedMinerals(newUsedList);
+      const [currentQuest, setCurrentQuest] = useState(null);
+      const [completedQuests, setCompletedQuests] = useState([]);
+      const [completedSingleMinerals, setCompletedSingleMinerals] = useState([]);
+      const [multiSelection, setMultiSelection] = useState([]);
+      
+      const [logs, setLogs] = useState([]);
+      const [usedTools, setUsedTools] = useState([]);
+      const [modal, setModal] = useState(null);
+      const [isShopOpen, setIsShopOpen] = useState(false);
+      const [purchasedItems, setPurchasedItems] = useState([]);
+      
+      useEffect(() => {
+        let timer;
+        if (isPlaying && !modal) {
+          timer = setInterval(() => setTimeElapsed(prev => prev + 1), 1000);
+        }
+        return () => clearInterval(timer);
+      }, [isPlaying, modal]);
 
-      // 12개 광물을 모두 맞췄을 때 (게임 클리어)
-      if (newUsedList.length >= MINERALS.length) {
-        playSound('clear');
+      const generateNextQuest = useCallback((currentCompleted = completedQuests) => {
+        const remainingQuests = QUESTS.filter(q => !currentCompleted.includes(q.id));
+        if (remainingQuests.length === 0) return;
+        const randomQuest = remainingQuests[Math.floor(Math.random() * remainingQuests.length)];
+
+        setCurrentQuest(randomQuest);
+        setMultiSelection([]);
+        setUsedTools([]);
+        setTimeElapsed(0);
+        setLogs([`📢 [새로운 의뢰 도착!]`, randomQuest.dialogue]);
+      }, [completedQuests]);
+
+      useEffect(() => {
+        if (isPlaying && currentQuest === null && completedQuests.length === 0) {
+          generateNextQuest([]);
+        }
+      }, [isPlaying, currentQuest, completedQuests, generateNextQuest]);
+
+      const handleToolClick = (toolId) => {
+        if (usedTools.includes(toolId)) return;
+        playSound('click');
+
+        if (currentQuest.type === 'multi') {
+          setLogs(prev => [...prev, `[시스템] 이론 평가 중에는 도구를 사용할 수 없습니다! 머릿속 지식을 활용하세요!`]);
+          return;
+        }
+
+        const simulatedMineral = MINERALS.find(m => m.id === currentQuest.mineralId);
+        let resultMsg = '';
+        switch (toolId) {
+          case 'color': resultMsg = simulatedMineral.color; break;
+          case 'streak': resultMsg = simulatedMineral.streak; break;
+          case 'hardness': resultMsg = simulatedMineral.hardness; break;
+          case 'hcl': resultMsg = simulatedMineral.hcl; break;
+          case 'magnetism': resultMsg = simulatedMineral.magnetism; break;
+          default: break;
+        }
+
+        setLogs(prev => [...prev, `[${TOOLS.find(t => t.id === toolId).name}] : ${resultMsg}`]);
+        setUsedTools(prev => [...prev, toolId]);
+      };
+
+      const handleGuess = (mineralName) => {
+        if (currentQuest.type === 'multi') {
+          playSound('click');
+          setMultiSelection(prev => 
+            prev.includes(mineralName) ? prev.filter(n => n !== mineralName) : [...prev, mineralName]
+          );
+          return;
+        }
+
+        if (currentQuest.requiredTool && !usedTools.includes(currentQuest.requiredTool)) {
+          playSound('error');
+          setLogs(prev => [...prev, `⚠️ [경고] 의뢰인이 먼저 [${TOOLS.find(t=>t.id === currentQuest.requiredTool).name}] 도구를 사용해서 확실하게 구분해주길 원합니다!`]);
+          return;
+        }
+
+        if (mineralName === currentQuest.target[0]) {
+          handleSuccess(`[${mineralName}] 이(가) 맞습니다!`, [mineralName]);
+        } else {
+          handleFail();
+        }
+      };
+
+      const handleMultiSubmit = () => {
+        if (multiSelection.length === 0) {
+          setLogs(prev => [...prev, `⚠️ [경고] 광물을 하나 이상 선택한 후 제출하세요!`]);
+          return;
+        }
+
+        const isCorrectLength = multiSelection.length === currentQuest.target.length;
+        const isAllCorrect = multiSelection.every(m => currentQuest.target.includes(m));
+
+        if (isCorrectLength && isAllCorrect) {
+          handleSuccess(`모두 정확하게 골라냈습니다! 완벽해요!`, []);
+        } else {
+          handleFail(true);
+        }
+      };
+
+      const handleSuccess = (msg, newSingleMinerals) => {
+        playSound('success');
+        let speedBonus = 0;
+        let timeMsg = `소요 시간: ${timeElapsed}초\n`;
+        if (timeElapsed <= 10) {
+          speedBonus = 500; timeMsg += `⚡ 스피드 보너스 500G!\n`;
+        } else if (timeElapsed <= 20) {
+          speedBonus = 200; timeMsg += `🏃 빠른 납품 보너스 200G!\n`;
+        }
+
+        setMoney(prev => prev + 1000 + speedBonus);
+        const newCompletedQuests = [...completedQuests, currentQuest.id];
+        setCompletedQuests(newCompletedQuests);
+
+        if (newSingleMinerals.length > 0) {
+          setCompletedSingleMinerals(prev => [...prev, ...newSingleMinerals]);
+        }
+
+        if (newCompletedQuests.length >= QUESTS.length) {
+          playSound('clear');
+          setModal({
+            type: 'clear',
+            title: '🎓 마스터 감정사 등극! (엔딩)',
+            msg: `축하합니다! 도감에 있는 모든 실전 및 이론 평가를 완벽하게 감정했습니다.\n당신은 진정한 광물학자입니다!\n\n최종 달성 소지금: ${money + 1000 + speedBonus} G`,
+          });
+        } else {
+          setModal({
+            type: 'success',
+            title: '🎉 정답입니다!',
+            msg: timeMsg + msg + `\n보수로 ${1000 + speedBonus}G를 받았습니다.`,
+            newCompletedQuests 
+          });
+        }
+      };
+
+      const handleFail = (isMulti = false) => {
+        playSound('error');
+        setMoney(prev => prev - 500);
         setModal({
-          type: 'clear',
-          title: '🎓 마스터 감정사 등극! (엔딩)',
-          msg: `축하합니다! 도감에 있는 12개의 모든 광물을 완벽하게 감정했습니다.\n당신은 진정한 광물학자입니다!\n\n최종 달성 소지금: ${money + 1000 + speedBonus} G`,
+          type: 'error',
+          title: '💥 오답입니다!',
+          msg: isMulti 
+            ? `선택한 광물 중 틀린 것이 있거나 빼먹은 것이 있습니다!\n위약금 500G를 차감합니다. 교과서를 다시 떠올려보세요!`
+            : `의뢰인이 화를 내며 위약금 500G를 떼어갔습니다...\n교과서를 떠올리며 일지를 다시 확인해보세요!`,
         });
-      } else {
-        // 일반 정답 처리
-        setModal({
-          type: 'success',
-          title: '🎉 정답입니다!',
-          msg: timeMsg + `[${targetMineral.name}] 이(가) 맞습니다!\n보수로 ${1000 + speedBonus}G를 받았습니다.`,
-          newUsedList // 모달 닫을 때 다음 광물 생성을 위해 전달
-        });
-      }
-    } else {
-      playSound('error');
-      setMoney(prev => prev - 500);
-      setModal({
-        type: 'error',
-        title: '💥 오답입니다!',
-        msg: `의뢰인이 화를 내며 위약금 500G를 떼어갔습니다...\n교과서 내용을 떠올리며 일지를 다시 확인해보세요!`,
-      });
-    }
-  };
+      };
 
-  const closeModal = () => {
-    playSound('click');
-    if (modal?.type === 'clear') {
-      // 엔딩 본 후 초기화
-      setIsPlaying(false);
-      setShowStory(true);
-      setUsedMinerals([]);
-      setTargetMineral(null);
-    } else if (modal?.type === 'success') {
-      // 다음 문제 출제 (업데이트된 리스트 사용)
-      generateNewMineral(modal.newUsedList);
-    }
-    setModal(null);
-  };
+      const closeModal = () => {
+        playSound('click');
+        if (modal?.type === 'clear') {
+          setIsPlaying(false);
+          setShowStory(true);
+          setCompletedQuests([]);
+          setCompletedSingleMinerals([]);
+          setCurrentQuest(null);
+        } else if (modal?.type === 'success') {
+          generateNextQuest(modal.newCompletedQuests);
+        }
+        setModal(null);
+      };
 
-  const handleBuyItem = (item) => {
-    if (purchasedItems.includes(item.id)) return;
-    if (money >= item.price) {
-      playSound('success');
-      setMoney(prev => prev - item.price);
-      setPurchasedItems(prev => [...prev, item.id]);
-    } else {
-      playSound('error');
-    }
-  };
+      const handleBuyItem = (item) => {
+        if (purchasedItems.includes(item.id)) return;
+        if (money >= item.price) {
+          playSound('success');
+          setMoney(prev => prev - item.price);
+          setPurchasedItems(prev => [...prev, item.id]);
+        } else {
+          playSound('error');
+        }
+      };
 
-  if (!isPlaying) {
-    if (showStory) {
-      return (
-        <div className="min-h-screen bg-gray-900 font-sans p-4 flex flex-col items-center justify-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
-          <div className="bg-gray-800 rounded-3xl shadow-xl p-10 flex flex-col items-center max-w-md w-full text-center border-4 border-gray-600 animate-fade-in-up">
-            <div className="text-6xl mb-6 drop-shadow-xl">🏚️</div>
-            <h1 className="text-3xl text-yellow-500 mb-6 drop-shadow-sm">할아버지의 낡은 감정소</h1>
-            <p className="text-gray-300 mb-8 text-lg leading-relaxed">
-              "쿨럭... 내 손주야...<br/>
-              이 낡은 광물 감정소를 네게 맡기마.<br/>
-              교과서에서 배운 지식으로 광물을 감정하고<br/>
-              <span className="text-yellow-400 font-bold">모든 도감을 완성해다오...</span>"
-            </p>
-            <button 
-              onClick={() => { playSound('click'); setShowStory(false); }}
-              className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl py-3 px-8 rounded-xl shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-yellow-700"
-            >
-              상점 물려받기 🔨
-            </button>
+      if (!isPlaying) {
+        if (showStory) {
+          return (
+            <div className="min-h-screen bg-gray-900 font-sans p-4 flex flex-col items-center justify-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
+              <div className="bg-gray-800 rounded-3xl shadow-xl p-10 flex flex-col items-center max-w-md w-full text-center border-4 border-gray-600 animate-fade-in-up">
+                <div className="text-6xl mb-6 drop-shadow-xl">🏚️</div>
+                <h1 className="text-3xl text-yellow-500 mb-6 drop-shadow-sm">할아버지의 낡은 감정소</h1>
+                <p className="text-gray-300 mb-8 text-lg leading-relaxed">
+                  "쿨럭... 내 손주야...<br/>이 낡은 광물 감정소를 네게 맡기마.<br/>교과서에서 배운 지식으로 광물을 감정하고<br/>
+                  <span className="text-yellow-400 font-bold">12개의 퀘스트를 모두 완수해다오...</span>"
+                </p>
+                <button onClick={() => { playSound('click'); setShowStory(false); }} className="bg-yellow-600 hover:bg-yellow-500 text-white text-xl py-3 px-8 rounded-xl shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-yellow-700">
+                  상점 물려받기 🔨
+                </button>
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div className="min-h-screen bg-pink-50 font-sans p-4 flex flex-col items-center justify-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
+            <div className="bg-white rounded-3xl shadow-xl p-10 flex flex-col items-center max-w-md w-full text-center border-4 border-pink-200">
+              <div className="text-8xl mb-6 animate-float drop-shadow-xl text-gray-300">❓</div>
+              <h1 className="text-4xl text-pink-600 mb-4 drop-shadow-sm">💎 광물 판매 타이쿤</h1>
+              <p className="text-gray-600 mb-8 text-lg bg-pink-50 p-4 rounded-xl">
+                총 <span className="text-pink-500 font-bold">12가지</span>의 퀘스트가 기다립니다.<br/>어떤 광물을 여러 개 선택해야 하는<br/>
+                <strong className="text-indigo-500">이론 문제</strong>도 섞여 있으니 주의하세요!
+              </p>
+              <button onClick={() => { playSound('start'); setIsPlaying(true); setMoney(0); setCompletedQuests([]); setPurchasedItems([]); }} className="bg-pink-400 hover:bg-pink-500 text-white text-2xl py-4 px-10 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-pink-600">
+                게임 시작하기 🚀
+              </button>
+            </div>
           </div>
+        );
+      }
+
+      return (
+        <div className="min-h-screen bg-pink-50 font-sans p-4 flex flex-col items-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
+          <header className="w-full max-w-3xl bg-white rounded-3xl shadow-md p-4 mb-6 flex justify-between items-center border-b-4 border-pink-200 flex-wrap gap-2">
+            <h1 className="text-2xl md:text-3xl text-pink-600 drop-shadow-sm flex items-center gap-2">
+              💎 광물 타이쿤 {purchasedItems.includes('license') && <span className="text-2xl animate-bounce" title="마스터 감정사">🏅</span>}
+            </h1>
+            <div className="flex gap-2 md:gap-4 text-sm md:text-lg text-gray-700 flex-wrap items-center">
+              <button onClick={() => { playSound('click'); setIsShopOpen(true); }} className="bg-purple-100 px-3 py-1 rounded-full border border-purple-300 text-purple-700 font-bold hover:bg-purple-200 active:scale-95 transition-transform shadow-sm">🛒 상점</button>
+              <div className="bg-blue-100 px-3 py-1 rounded-full border border-blue-300 text-blue-700 flex items-center font-bold">⏱️ {timeElapsed}초</div>
+              <div className="bg-yellow-100 px-3 py-1 rounded-full border border-yellow-300 font-bold">의뢰: {completedQuests.length + 1} / 12</div>
+              <div className="bg-green-100 px-3 py-1 rounded-full border border-green-300">소지금: <span className="text-green-600 font-bold">{money.toLocaleString()} G</span></div>
+            </div>
+          </header>
+
+          <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
+            <section className={`rounded-3xl shadow-lg p-6 border-2 flex flex-col items-center relative overflow-hidden transition-colors duration-500 ${currentQuest?.type === 'multi' ? 'bg-blue-50 border-blue-200' : purchasedItems.includes('desk') ? 'bg-amber-800 border-amber-900' : 'bg-white border-indigo-100'}`}>
+              {purchasedItems.includes('plant') && <div className="absolute bottom-4 left-4 text-4xl animate-pulse">🪴</div>}
+              <h2 className={`text-xl mb-4 px-4 py-1 rounded-full w-full text-center z-10 font-bold ${currentQuest?.type === 'multi' ? 'bg-blue-600 text-white shadow-md' : purchasedItems.includes('desk') ? 'bg-amber-900 text-amber-200' : 'text-indigo-500 bg-indigo-50'}`}>
+                {currentQuest?.type === 'multi' ? '📘 이론 평가 모드' : '🔬 광물 실험실'}
+              </h2>
+              <div className="text-8xl my-6 animate-float drop-shadow-xl relative text-gray-300 font-bold z-10">
+                {currentQuest?.type === 'multi' ? '🤔' : '❓'}<div className="absolute -top-4 -right-4 text-3xl animate-pulse">✨</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 w-full mt-2 z-10">
+                {TOOLS.map((tool) => (
+                  <button key={tool.id} onClick={() => handleToolClick(tool.id)} disabled={usedTools.includes(tool.id) || currentQuest?.type === 'multi'} className={`flex flex-col items-center justify-center p-2 rounded-2xl border-b-4 transition-all duration-200 ${currentQuest?.type === 'multi' ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed opacity-50 border-b-0' : usedTools.includes(tool.id) ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed transform translate-y-1 border-b-0' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}>
+                    <span className="text-lg">{tool.name}</span>
+                    <span className="text-xs opacity-70">{tool.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-6">
+              <div className="bg-yellow-50 rounded-3xl shadow-lg p-6 border-2 border-yellow-200 flex-1 flex flex-col">
+                <h2 className="text-xl text-yellow-600 mb-4 bg-yellow-100 px-4 py-1 rounded-full text-center font-bold">📝 실험 일지</h2>
+                <div className="flex-1 bg-white rounded-xl p-4 border border-yellow-100 shadow-inner flex flex-col gap-2 overflow-y-auto max-h-80">
+                  {logs.map((log, idx) => (
+                    <div key={idx} className={`p-2 rounded-lg text-sm animate-fade-in-up leading-relaxed ${log.includes('⚠️') ? 'bg-red-50 text-red-600 font-bold' : 'bg-gray-50 text-gray-700'}`}>
+                      {log.split('\n').map((line, i) => <p key={i} className={i === 0 && log.includes('📢') ? 'font-bold text-indigo-600 mb-1 text-base' : ''}>{line}</p>)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <section className="w-full max-w-3xl mt-6 bg-white rounded-3xl shadow-lg p-6 border-2 border-green-100">
+            <h2 className={`text-xl mb-4 px-4 py-1 rounded-full text-center font-bold ${currentQuest?.type === 'multi' ? 'bg-blue-100 text-blue-700' : 'bg-green-50 text-green-600'}`}>
+              {currentQuest?.type === 'multi' ? '✅ 해당하는 광물을 모두 선택하세요' : '🚚 납품할 광물 하나를 선택하세요'}
+            </h2>
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {ALL_MINERAL_NAMES.map((name) => {
+                const isMultiSelected = currentQuest?.type === 'multi' && multiSelection.includes(name);
+                const isSolvedSingle = currentQuest?.type === 'single' && completedSingleMinerals.includes(name);
+                return (
+                  <button key={name} onClick={() => handleGuess(name)} disabled={isSolvedSingle} className={`p-3 rounded-2xl border-b-4 transition-all text-base md:text-lg font-bold ${isSolvedSingle ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed transform translate-y-1 border-b-0' : isMultiSelected ? 'bg-blue-500 text-white border-blue-700 transform translate-y-1 border-b-0 ring-4 ring-blue-200' : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}>
+                    {name}
+                  </button>
+                );
+              })}
+            </div>
+            {currentQuest?.type === 'multi' && (
+              <button onClick={handleMultiSubmit} className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white text-xl font-bold rounded-2xl shadow-md border-b-4 border-blue-800 active:translate-y-1 active:border-b-0 transition-all animate-pulse">
+                정답 제출하기 ({multiSelection.length}개 선택됨)
+              </button>
+            )}
+          </section>
+
+          {modal && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 animate-fade-in">
+              <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center transform scale-100 transition-transform">
+                <div className="text-6xl mb-4">{modal.type === 'success' ? '🥳' : modal.type === 'clear' ? '🏆' : '😭'}</div>
+                <h2 className={`text-2xl mb-4 font-bold ${modal.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>{modal.title}</h2>
+                <p className="text-gray-600 mb-6 whitespace-pre-wrap leading-relaxed font-medium">{modal.msg}</p>
+                <button onClick={closeModal} className={`w-full py-3 rounded-2xl text-xl text-white font-bold transition-all hover:scale-105 active:scale-95 shadow-md ${modal.type === 'error' ? 'bg-red-400 hover:bg-red-500' : 'bg-green-400 hover:bg-green-500'}`}>
+                  {modal.type === 'success' ? '다음 의뢰 받기 ➡️' : modal.type === 'clear' ? '처음 화면으로 🏠' : '다시 확인해보기 🔄'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isShopOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto">
+                <button onClick={() => { playSound('click'); setIsShopOpen(false); }} className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold">✕</button>
+                <h2 className="text-3xl text-purple-600 mb-2 text-center flex items-center justify-center gap-2">🛒 아이템 상점</h2>
+                <p className="text-center text-gray-500 mb-6 font-medium">열심히 번 돈으로 연구실을 꾸미고 자격증을 따보세요!</p>
+                <div className="bg-green-50 text-green-700 p-3 rounded-xl text-center font-bold text-xl mb-6 border border-green-200 shadow-inner">보유 금액: {money.toLocaleString()} G</div>
+                <div className="flex flex-col gap-4">
+                  {SHOP_ITEMS.map((item) => {
+                    const isPurchased = purchasedItems.includes(item.id);
+                    const canAfford = money >= item.price;
+                    return (
+                      <div key={item.id} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isPurchased ? 'bg-gray-100 border-gray-200 opacity-70' : 'bg-white border-purple-100 hover:border-purple-300 hover:shadow-md'}`}>
+                        <div className="flex-1">
+                          <h3 className={`text-xl font-bold ${isPurchased ? 'text-gray-500' : 'text-gray-800'}`}>{item.name}</h3>
+                          <p className="text-sm text-gray-500 mt-1 mr-4">{item.desc}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 shrink-0">
+                          <span className={`font-bold ${isPurchased ? 'text-gray-400 line-through' : 'text-yellow-600'}`}>{item.price.toLocaleString()} G</span>
+                          <button onClick={() => handleBuyItem(item)} disabled={isPurchased || (!canAfford && !isPurchased)} className={`px-4 py-2 rounded-xl font-bold transition-all shadow-sm whitespace-nowrap ${isPurchased ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : canAfford ? 'bg-purple-500 hover:bg-purple-600 text-white hover:scale-105 active:scale-95' : 'bg-red-50 text-red-400 border border-red-200 cursor-not-allowed'}`}>
+                            {isPurchased ? '구매완료' : '구매하기'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
 
-    return (
-      <div className="min-h-screen bg-pink-50 font-sans p-4 flex flex-col items-center justify-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
-        <style>
-          {`
-            @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
-            @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-            .animate-float { animation: float 3s ease-in-out infinite; }
-            .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
-            @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-          `}
-        </style>
-        <div className="bg-white rounded-3xl shadow-xl p-10 flex flex-col items-center max-w-md w-full text-center border-4 border-pink-200">
-          <div className="text-8xl mb-6 animate-float drop-shadow-xl text-gray-300">❓</div>
-          <h1 className="text-4xl text-pink-600 mb-4 drop-shadow-sm">💎 광물 판매 타이쿤</h1>
-          <p className="text-gray-600 mb-8 text-lg bg-pink-50 p-4 rounded-xl">
-            총 <span className="text-pink-500 font-bold">12가지</span>의 광물이 존재합니다.<br/>
-            중복되는 광물은 없으니<br/>
-            교과서 지식을 동원해 모두 감정해보세요!
-          </p>
-          <button 
-            onClick={() => { playSound('start'); setIsPlaying(true); setMoney(0); setUsedMinerals([]); setPurchasedItems([]); }}
-            className="bg-pink-400 hover:bg-pink-500 text-white text-2xl py-4 px-10 rounded-full shadow-md transition-transform hover:scale-105 active:scale-95 border-b-4 border-pink-600"
-          >
-            게임 시작하기 🚀
-          </button>
-        </div>
-      </div>
-    );
-  }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 
-  return (
-    <div className="min-h-screen bg-pink-50 font-sans p-4 flex flex-col items-center pb-20" style={{ fontFamily: "'Jua', sans-serif" }}>
-      <style>
-        {`
-          @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
-          @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-          .animate-float { animation: float 3s ease-in-out infinite; }
-          .animate-fade-in-up { animation: fadeInUp 0.3s ease-out forwards; }
-          @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-          ::-webkit-scrollbar { width: 8px; }
-          ::-webkit-scrollbar-track { background: #fdf2f8; border-radius: 10px; }
-          ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
-          ::-webkit-scrollbar-thumb:hover { background: #f472b6; }
-        `}
-      </style>
-
-      {/* 헤더 구역 */}
-      <header className="w-full max-w-3xl bg-white rounded-3xl shadow-md p-4 mb-6 flex justify-between items-center border-b-4 border-pink-200 flex-wrap gap-2">
-        <h1 className="text-2xl md:text-3xl text-pink-600 drop-shadow-sm flex items-center gap-2">
-          💎 광물 판매 타이쿤 
-          {purchasedItems.includes('license') && <span className="text-2xl animate-bounce" title="마스터 감정사">🏅</span>}
-        </h1>
-        <div className="flex gap-2 md:gap-4 text-sm md:text-lg text-gray-700 flex-wrap items-center">
-          <button 
-            onClick={() => { playSound('click'); setIsShopOpen(true); }}
-            className="bg-purple-100 px-3 py-1 rounded-full border border-purple-300 text-purple-700 font-bold hover:bg-purple-200 active:scale-95 transition-transform shadow-sm"
-          >
-            🛒 상점
-          </button>
-          <div className="bg-blue-100 px-3 py-1 rounded-full border border-blue-300 text-blue-700 flex items-center font-bold">
-            ⏱️ {timeElapsed}초
-          </div>
-          <div className="bg-yellow-100 px-3 py-1 rounded-full border border-yellow-300 font-bold">
-            의뢰: {usedMinerals.length + 1} / 12
-          </div>
-          <div className="bg-green-100 px-3 py-1 rounded-full border border-green-300">
-            소지금: <span className="text-green-600 font-bold">{money.toLocaleString()} G</span>
-          </div>
-        </div>
-      </header>
-
-      {/* 메인 게임 구역 */}
-      <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-2 gap-6">
-        
-        {/* 왼쪽: 광물 실험실 */}
-        <section className={`rounded-3xl shadow-lg p-6 border-2 flex flex-col items-center relative overflow-hidden transition-colors duration-500
-          ${purchasedItems.includes('desk') ? 'bg-amber-800 border-amber-900' : 'bg-white border-indigo-100'}`}
-        >
-          {purchasedItems.includes('plant') && <div className="absolute bottom-4 left-4 text-4xl animate-pulse">🪴</div>}
-          {purchasedItems.includes('yacht') && <div className="absolute top-4 right-4 text-4xl opacity-50">🛥️</div>}
-
-          <h2 className={`text-xl mb-4 px-4 py-1 rounded-full w-full text-center z-10
-            ${purchasedItems.includes('desk') ? 'bg-amber-900 text-amber-200' : 'text-indigo-500 bg-indigo-50'}`}>
-            🔬 광물 실험실
-          </h2>
-          
-          <div className="text-8xl my-6 animate-float drop-shadow-xl relative cursor-pointer text-gray-300 font-bold z-10" title="감정할 광물입니다!">
-            ❓
-            <div className="absolute -top-4 -right-4 text-3xl animate-pulse">✨</div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 w-full mt-2 z-10">
-            {TOOLS.map((tool) => (
-              <button
-                key={tool.id}
-                onClick={() => handleToolClick(tool.id)}
-                disabled={usedTools.includes(tool.id)}
-                className={`flex flex-col items-center justify-center p-2 rounded-2xl border-b-4 transition-all duration-200 
-                  ${usedTools.includes(tool.id) 
-                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed transform translate-y-1 border-b-0' 
-                    : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}
-              >
-                <span className="text-lg">{tool.name}</span>
-                <span className="text-xs opacity-70">{tool.desc}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* 오른쪽: 실험 일지 */}
-        <section className="flex flex-col gap-6">
-          <div className="bg-yellow-50 rounded-3xl shadow-lg p-6 border-2 border-yellow-200 flex-1 flex flex-col">
-            <h2 className="text-xl text-yellow-600 mb-4 bg-yellow-100 px-4 py-1 rounded-full text-center">📝 실험 일지</h2>
-            <div className="flex-1 bg-white rounded-xl p-4 border border-yellow-100 shadow-inner flex flex-col gap-2 overflow-y-auto max-h-80">
-              {logs.map((log, idx) => (
-                <div key={idx} className="text-gray-700 bg-gray-50 p-2 rounded-lg text-sm animate-fade-in-up leading-relaxed">
-                  {log.split('\n').map((line, i) => <p key={i} className={i === 0 && log.includes('📢') ? 'font-bold text-indigo-600 mb-1' : ''}>{line}</p>)}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-
-      {/* 하단: 정답 제출 */}
-      <section className="w-full max-w-3xl mt-6 bg-white rounded-3xl shadow-lg p-6 border-2 border-green-100">
-        <h2 className="text-xl text-green-600 mb-4 bg-green-50 px-4 py-1 rounded-full text-center">🚚 납품할 광물 선택하기</h2>
-        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-          {ALL_MINERAL_NAMES.map((name) => {
-            // 이미 맞힌 광물은 희미하게 처리하고 비활성화
-            const isSolved = usedMinerals.includes(name);
-            return (
-              <button
-                key={name}
-                onClick={() => handleGuess(name)}
-                disabled={isSolved}
-                className={`p-2 md:p-3 rounded-2xl border-b-4 transition-all text-base md:text-lg font-bold
-                  ${isSolved 
-                    ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed transform translate-y-1 border-b-0' 
-                    : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200 hover:-translate-y-1 active:translate-y-1 active:border-b-0'}`}
-              >
-                {name}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* 모달 창 (정답/오답/클리어 결과) */}
-      {modal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl flex flex-col items-center text-center transform scale-100 transition-transform">
-            <div className="text-6xl mb-4">
-              {modal.type === 'success' ? '🥳' : modal.type === 'clear' ? '🏆' : '😭'}
-            </div>
-            <h2 className={`text-2xl mb-4 font-bold ${modal.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-              {modal.title}
-            </h2>
-            <p className="text-gray-600 mb-6 whitespace-pre-wrap leading-relaxed">
-              {modal.msg}
-            </p>
-            <button
-              onClick={closeModal}
-              className={`w-full py-3 rounded-2xl text-xl text-white font-bold transition-all hover:scale-105 active:scale-95 shadow-md
-                ${modal.type === 'error' ? 'bg-red-400 hover:bg-red-500' : 'bg-green-400 hover:bg-green-500'}`}
-            >
-              {modal.type === 'success' ? '다음 의뢰 받기 ➡️' : modal.type === 'clear' ? '처음 화면으로 🏠' : '다시 확인해보기 🔄'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 상점 모달 */}
-      {isShopOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl flex flex-col relative max-h-[90vh] overflow-y-auto">
-            <button 
-              onClick={() => { playSound('click'); setIsShopOpen(false); }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-3xl font-bold"
-            >✕</button>
-            <h2 className="text-3xl text-purple-600 mb-2 text-center flex items-center justify-center gap-2">🛒 아이템 상점</h2>
-            <p className="text-center text-gray-500 mb-6">열심히 번 돈으로 연구실을 꾸미고 자격증을 따보세요!</p>
-            
-            <div className="bg-green-50 text-green-700 p-3 rounded-xl text-center font-bold text-xl mb-6 border border-green-200 shadow-inner">
-              보유 금액: {money.toLocaleString()} G
-            </div>
-
-            <div className="flex flex-col gap-4">
-              {SHOP_ITEMS.map((item) => {
-                const isPurchased = purchasedItems.includes(item.id);
-                const canAfford = money >= item.price;
-                return (
-                  <div key={item.id} className={`flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${isPurchased ? 'bg-gray-100 border-gray-200 opacity-70' : 'bg-white border-purple-100 hover:border-purple-300 hover:shadow-md'}`}>
-                    <div className="flex-1">
-                      <h3 className={`text-xl font-bold ${isPurchased ? 'text-gray-500' : 'text-gray-800'}`}>{item.name}</h3>
-                      <p className="text-sm text-gray-500 mt-1 mr-4">{item.desc}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className={`font-bold ${isPurchased ? 'text-gray-400 line-through' : 'text-yellow-600'}`}>{item.price.toLocaleString()} G</span>
-                      <button
-                        onClick={() => handleBuyItem(item)}
-                        disabled={isPurchased || (!canAfford && !isPurchased)}
-                        className={`px-4 py-2 rounded-xl font-bold transition-all shadow-sm whitespace-nowrap ${isPurchased ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : canAfford ? 'bg-purple-500 hover:bg-purple-600 text-white hover:scale-105 active:scale-95' : 'bg-red-50 text-red-400 border border-red-200 cursor-not-allowed'}`}
-                      >
-                        {isPurchased ? '구매완료' : '구매하기'}
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+    body { font-family: 'Jua', sans-serif; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    .animate-float { animation: float 3s ease-in-out infinite; }
+    .animate-fade-in-up { animation: fadeInUp 0.5s ease-out forwards; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #fdf2f8; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #fbcfe8; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #f472b6; }
+  </style>
+</body>
+</html>
